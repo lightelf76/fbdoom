@@ -120,19 +120,25 @@ int location(int x, int y)
 
 void I_FinishUpdate (void)
 {
-    for (int gy=0; gy<SCREENHEIGHT; gy++)
+    if (vinfo.bits_per_pixel == 32)
     {
-        for (int gx=0; gx<SCREENWIDTH; gx++)
+        for (int gy=0; gy<SCREENHEIGHT; gy++)
         {
-            int fbPos = location(gx,gy);
-            if (vinfo.bits_per_pixel == 32)
+            for (int gx=0; gx<SCREENWIDTH; gx++)
             {
+                int fbPos = location(gx,gy);
                 *((uint32_t*)(fbp+fbPos + 0)) = colors[*(screens[0]+gy*SCREENWIDTH+gx)].raw;
             }
-            else if (vinfo.bits_per_pixel == 16)
+        }
+    }
+    else if (vinfo.bits_per_pixel == 16)
+    {
+        for (int gy=0; gy<SCREENHEIGHT; gy++)
+        {
+            for (int gx=0; gx<SCREENWIDTH; gx++)
             {
-//                *((uint16_t*)(fbp+fbPos)) = colorTo16bit(colors[*(screens[0]+gy*SCREENWIDTH+gx)].col);
-		  *((uint16_t*)(fbp+fbPos)) = colors16[*(screens[0]+gy*SCREENWIDTH+gx)];
+                int fbPos = location(gx,gy);
+                *((uint16_t*)(fbp+fbPos)) = colors16[*(screens[0]+gy*SCREENWIDTH+gx)];
             }
         }
     }

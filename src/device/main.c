@@ -8,7 +8,7 @@
 int main(int argc, const char** argv)
 {
     myargc = argc;
-    myargv = argv;
+    myargv = (char **)argv;
 
     // struct termios initial_settings, new_settings;
     // tcgetattr(0,&initial_settings);

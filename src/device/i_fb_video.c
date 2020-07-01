@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include "v_video.h"
 
-static FILE* fbfd = 0;
+static int fbfd = 0;
 static struct fb_var_screeninfo vinfo;
 static struct fb_fix_screeninfo finfo;
 static long int screensize = 0;
@@ -46,12 +46,12 @@ void I_InitGraphics (void)
 
     /* Map the device to memory */
     fbp = (char *)mmap(0, screensize, PROT_READ | PROT_WRITE, MAP_SHARED,fbfd, 0);
-    if ((int64_t)fbp == -1) {
+    if ((intptr_t)fbp == -1) {
             printf("Error: failed to map framebuffer device to memory.\n");
             exit(4);
     }
     printf("The framebuffer device was mapped to memory successfully.\n");
-        
+
 }
 
 
@@ -65,6 +65,8 @@ void I_StartFrame (void)
 {
 
 }
+
+
 __attribute__((packed))
 struct Color
 {
@@ -81,6 +83,14 @@ union ColorInt
 };
 
 static union ColorInt colors[256];
+static uint16_t colors16[256];
+
+uint16_t colorTo16bit(struct Color col)
+{
+    return  (col.r >> 3) << 11 | (col.g >> 2) << 5 | (col.b >> 3);
+    //return (col.b & 0x1F) << 10 | (col.g & 0x1F) << 5 | (col.r & 0x1F);
+}
+
 
 // Takes full 8 bit values.
 void I_SetPalette (byte* palette)
@@ -95,6 +105,7 @@ void I_SetPalette (byte* palette)
         colors[i].col.g = (c<<8) + c;
         c = gammatable[usegamma][*palette++];
         colors[i].col.b = (c<<8) + c;
+	colors16[i] = colorTo16bit(colors[i].col);
     }
 }
 
@@ -105,12 +116,6 @@ void I_UpdateNoBlit (void)
 int location(int x, int y)
 {
     return (x+vinfo.xoffset) * (vinfo.bits_per_pixel/8) + (y+vinfo.yoffset) * finfo.line_length;
-}
-
-uint16_t colorTo16bit(struct Color col)
-{
-    return  (col.r >> 3) << 11 | (col.g >> 2) << 5 | (col.b >> 3);
-    //return (col.b & 0x1F) << 10 | (col.g & 0x1F) << 5 | (col.r & 0x1F);
 }
 
 void I_FinishUpdate (void)
@@ -126,7 +131,8 @@ void I_FinishUpdate (void)
             }
             else if (vinfo.bits_per_pixel == 16)
             {
-                *((uint16_t*)(fbp+fbPos)) = colorTo16bit(colors[*(screens[0]+gy*SCREENWIDTH+gx)].col);
+//                *((uint16_t*)(fbp+fbPos)) = colorTo16bit(colors[*(screens[0]+gy*SCREENWIDTH+gx)].col);
+		  *((uint16_t*)(fbp+fbPos)) = colors16[*(screens[0]+gy*SCREENWIDTH+gx)];
             }
         }
     }
